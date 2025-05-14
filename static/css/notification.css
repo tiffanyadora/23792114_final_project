@@ -1,0 +1,230 @@
+/* Styles for notifications and alerts */
+
+/* Toast notifications */
+.notification {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    max-width: 350px;
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1100;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    transform: translateY(-20px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.notification.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.notification-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.notification-content i {
+    font-size: 1.25rem;
+    margin-top: 0.15rem;
+}
+
+.notification-content p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 0;
+    margin-left: 1rem;
+    font-size: 1rem;
+}
+
+.notification-close:hover {
+    color: #343a40;
+}
+
+/* Notification types */
+.notification.success .notification-content i {
+    color: #28a745;
+}
+
+.notification.error .notification-content i {
+    color: #dc3545;
+}
+
+.notification.warning .notification-content i {
+    color: #ffc107;
+}
+
+.notification.info .notification-content i {
+    color: #17a2b8;
+}
+
+/* Notification dropdown in header */
+#notification-badge {
+    position: absolute;
+    top: -7px;
+    right: -12px;
+    background-color: rgba(239, 64, 86, 0.8); /* Bloom with 80% opacity */
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 0.12rem 0.15rem;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    display: none;
+}
+
+#notification-badge.show {
+    display: block;
+}
+
+#notifications-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 350px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+}
+
+#notifications-dropdown.show {
+    display: block;
+}
+
+.notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.notifications-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.notifications-actions a {
+    color: #0056b3;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.notifications-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+    background-color: #f0f7ff;
+}
+
+.notification-item.unread:hover {
+    background-color: #e5f1ff;
+}
+
+.notification-icon {
+    margin-right: 0.75rem;
+    font-size: 1.25rem;
+    padding-top: 0.25rem;
+}
+
+.notification-icon.success i {
+    color: #28a745;
+}
+
+.notification-icon.error i {
+    color: #dc3545;
+}
+
+.notification-icon.warning i {
+    color: #ffc107;
+}
+
+.notification-icon.info i {
+    color: #17a2b8;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-message {
+    margin: 0 0 0.25rem;
+    line-height: 1.4;
+}
+
+.notification-date {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.notifications-loading,
+.no-notifications,
+.notifications-error {
+    padding: 2rem;
+    text-align: center;
+    color: #6c757d;
+}
+
+.notifications-loading i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.notifications-footer {
+    padding: 0.75rem;
+    text-align: center;
+    border-top: 1px solid #dee2e6;
+}
+
+.notifications-footer a {
+    color: #0056b3;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+/* Mobile adjustments */
+@media (max-width: 576px) {
+    .notification {
+        left: 1rem;
+        right: 1rem;
+        max-width: none;
+    }
+    
+    #notifications-dropdown {
+        width: calc(100vw - 2rem);
+        max-width: 400px;
+    }
+}
