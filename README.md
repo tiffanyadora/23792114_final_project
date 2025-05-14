@@ -132,6 +132,15 @@ To create your API key, please follow below steps:
 2. Get your API key
 3. Add to your `.env` file as `OPENWEATHER_API_KEY`
 
+### OpenAI API
+This will be used for generating product keywords by admin.
+
+To create your API key, please follow the steps below:
+1. Sign up or log in at https://platform.openai.com/
+2. Go to your "API Keys" page
+3. Create a new API key
+4. Add to your `.env` file as `OPENAI_API_KEY`
+
 ## Features and Testing
 
 ### User Roles
