@@ -1,7 +1,7 @@
 # WildcatWear
 ### By: Tiffany Adora (23792114)
 
-**WildcatWear** is an e-commerce website for University of Arizona merchandise, built using **Django** as the backend stack, **HTML/CSS** as the frontend stack, as well as **Javascript**. Now fully-functioned, the platform supports user authentication, product management, shopping cart functionality, order processing, and many more. 
+**WildcatWear** is an e-commerce website for University of Arizona merchandise, built using **Django** as the backend stack, **HTML/CSS** as the frontend stack, as well as **Javascript**. Now fully-functioned, the platform supports user authentication, product management, shopping functionality, order processing, and many more. 
 
 Please follow the instructions below on how to spin up this project.
 
@@ -183,7 +183,7 @@ To test, log in as an admin or seller and:
 4. Toggle product listing status
 5. Delete a product
 
-### Shopping Experience
+### Shopping
 
 Users can:
 - Browse products by category
