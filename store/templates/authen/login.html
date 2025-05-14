@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login - WildcatWear{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-form-container">
+        <h2 class="section-title my-10 pb-2">
+            Login to Your Account
+        </h2>
+        
+        {% if messages %}
+        <div class="alert alert-danger">
+            {% for message in messages %}
+                {{ message|safe }}
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <form method="post" action="{% url 'login' %}" class="auth-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="username">Username or Email</label>
+                <input type="text" id="username" name="username" value="{{ username|default:'' }}" required>
+            </div>
+            
+            <div class="form-group password-field">
+                <label for="password">Password</label>
+                <div class="password-input-container">
+                    <input type="password" id="password" name="password" required>
+                    <button type="button" class="password-toggle">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Login</button>
+            </div>
+            
+            {% if is_locked_out %}
+            <div class="lockout-message alert alert-warning mt-3">
+                <p>Your account is temporarily locked due to too many failed login attempts.</p>
+                <p>Please try again in {{ remaining_minutes }} minutes or reset your password.</p>
+                <a href="{% url 'password_reset' %}" class="btn btn-secondary btn-sm mt-2">Reset Password</a>
+            </div>
+            {% endif %}
+            
+            <div class="auth-links">
+                <a href="{% url 'password_reset' %}">Forgot your password?</a>
+                <p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Password visibility toggle
+    const passwordToggle = document.querySelector('.password-toggle');
+    const passwordInput = document.getElementById('password');
+    
+    if (passwordToggle && passwordInput) {
+        passwordToggle.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle icon
+            const icon = this.querySelector('i');
+            if (type === 'text') {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

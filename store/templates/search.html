@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% load static %}
+
+{% block title %}Search Results - WildcatWear{% endblock %}
+
+{% block content %}
+<!-- Display the Search Results -->
+<section class="search-results container">
+    <h2 class="section-title my-5 pb-2">Search Results</h2>
+
+    <div id="recent-searches-section" class="d-flex flex-row my-5">
+        <p>Last Searches:</p>
+        <div id="recent-search-buttons"></div>
+    </div>        
+    
+    <div id="info-sort-section" class="d-flex flex-row justify-between">
+        {% if query %}
+            <p class="text-center">Showing results for "<strong>{{ query }}</strong>"</p>
+        {% endif %}
+
+        <div class="sorting-options mb-4">
+            <select id="product-sort-search" class="form-control">
+                <option value="">Sort By</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="rating-asc">Rating: Low to High</option>
+                <option value="rating-desc">Rating: High to Low</option>
+            </select>
+        </div>
+    </div>
+    
+    {% if results %}
+        <div class="product-flex d-flex flex-wrap gap-4 justify-center">
+            {% for product in results %}
+                <a href="{% url 'product_detail' product_id=product.id %}" class="product-card">
+                    <div class="product-image">
+                        <img src="{% static 'images/' %}{{ product.get_primary_image_name }}" alt="{{ product.name }}">
+                    </div>
+                    <div class="product-info p-3">
+                        <h3 class="mb-1">{{ product.name }}</h3>
+                        <p class="product-price">${{ product.price }}</p>
+                        <div class="product-rating d-flex align-center mb-1">
+                            <!-- Display Solid star -->
+                            {% with ''|center:product.rating|slice:':5' as stars %}
+                                {% for _ in stars %}
+                                    <i class="fa-solid fa-star"></i>
+                                {% endfor %}
+                            {% endwith %}
+                            
+                            <!-- Display half star if needed -->
+                            {% if product.rating|floatformat:1|slice:'-1:' >= '1' %}
+                                <i class="fa-solid fa-star-half-alt"></i>
+                            {% endif %}
+                            <span class="ml-1">{{ product.rating }}</span>
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+        
+        {# Pagination #}
+        {% if results.has_other_pages %}
+        <nav class="pagination-container my-5">
+            <ul class="pagination d-flex justify-center gap-2">
+                {% if results.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if query %}query={{ query|urlencode }}&{% endif %}{% if category %}category={{ category }}&{% endif %}{% if min_price %}min_price={{ min_price }}&{% endif %}{% if max_price %}max_price={{ max_price }}&{% endif %}{% if min_rating %}min_rating={{ min_rating }}&{% endif %}page={{ results.previous_page_number }}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+                {% endif %}
+
+                {% for i in results.paginator.page_range %}
+                    {% if results.number == i %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ i }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if query %}query={{ query|urlencode }}&{% endif %}{% if category %}category={{ category }}&{% endif %}{% if min_price %}min_price={{ min_price }}&{% endif %}{% if max_price %}max_price={{ max_price }}&{% endif %}{% if min_rating %}min_rating={{ min_rating }}&{% endif %}page={{ i }}">{{ i }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if results.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if query %}query={{ query|urlencode }}&{% endif %}{% if category %}category={{ category }}&{% endif %}{% if min_price %}min_price={{ min_price }}&{% endif %}{% if max_price %}max_price={{ max_price }}&{% endif %}{% if min_rating %}min_rating={{ min_rating }}&{% endif %}page={{ results.next_page_number }}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+    {% else %}
+        <p class="text-center">No results found. Try searching for another product.</p>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/sorting.js' %}"></script>
+{% endblock %}

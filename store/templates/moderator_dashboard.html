@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Moderator Dashboard - WildcatWear{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container container">
+    <h1 class="section-title my-5 pb-2">Moderator Dashboard</h1>
+    
+    <div class="admin-tabs">
+        <ul class="nav nav-tabs" id="moderatorTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="reviews-tab" data-toggle="tab" href="#reviews" role="tab">Review Management</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="products-tab" data-toggle="tab" href="#products" role="tab">Product Listing</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="users-tab" data-toggle="tab" href="#users" role="tab">User Moderation</a>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="moderatorTabsContent">
+            <!-- Review Management Tab -->
+            <div class="tab-pane fade show active" id="reviews" role="tabpanel">
+                <div class="admin-card">
+                    <h2>Review Management</h2>
+                    
+                    <div class="filter-bar">
+                        <form method="GET" action="{% url 'moderator_dashboard' %}" class="d-flex justify-between align-items-center w-100">
+                            <div class="search-field flex-grow-1 mr-3">
+                                <input type="text" id="review-search" name="search_query" value="{{ search_query|default:'' }}" placeholder="Search reviews...">
+                                <button type="submit" class="search-btn"><i class="fa-solid fa-search"></i></button>
+                            </div>
+                            <div class="filter-dropdown">
+                                <select id="review-filter" name="review_filter" onchange="this.form.submit()">
+                                    <option value="">All Ratings</option>
+                                    <option value="low_rated" {% if review_filter == 'low_rated' %}selected{% endif %}>Low Rated (1-2 ★)</option>
+                                    <option value="high_rated" {% if review_filter == 'high_rated' %}selected{% endif %}>High Rated (4-5 ★)</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="admin-table reviews-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User</th>
+                                    <th>Product</th>
+                                    <th>Rating</th>
+                                    <th>Comment</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for review in reviews %}
+                                <tr>
+                                    <td>{{ review.id }}</td>
+                                    <td>
+                                        {{ review.username }}
+                                        {% if review.user.is_review_banned %}
+                                        <span class="badge badge-danger">Banned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ review.product.name }}
+                                    </td>
+                                    <td>
+                                        <div class="star-rating">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= review.rating %}
+                                                    <i class="fa-solid fa-star"></i>
+                                                {% else %}
+                                                    <i class="fa-regular fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td class="review-comment">{{ review.comment|truncatechars:100 }}</td>
+                                    <td>{{ review.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-danger delete-review-btn" data-review-id="{{ review.id }}">Delete</button>
+                                            
+                                            {% if not review.user.is_review_banned %}
+                                                <button class="btn btn-sm btn-secondary ban-reviews-btn" data-user-id="{{ review.user.id }}">Ban User</button>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-success unban-reviews-btn" data-user-id="{{ review.user.id }}">Unban User</button>
+                                            {% endif %}
+                                            
+                                            <a href="{% url 'product_detail' review.product.id %}" class="btn btn-sm btn-secondary">View Review</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">No reviews found matching your criteria</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Product Listing Tab -->
+            <div class="tab-pane fade" id="products" role="tabpanel">
+                <div class="admin-card">
+                    <h2>Product Listing Management</h2>
+                    
+                    <div class="filter-bar">
+                        <div class="search-field">
+                            <input type="text" id="product-search" placeholder="Search products...">
+                            <button class="search-btn"><i class="fa-solid fa-search"></i></button>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="product-status-filter">
+                                <option value="">All Products</option>
+                                <option value="listed">Listed Products</option>
+                                <option value="unlisted">Unlisted Products</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="admin-table products-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Image</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Rating</th>
+                                    <th>Seller</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in listed_products %}
+                                <tr class="product-row" data-status="listed">
+                                    <td>{{ product.id }}</td>
+                                    <td>
+                                        <img src="{% static 'images/' %}{{ product.get_primary_image_name }}" alt="{{ product.name }}" class="product-thumbnail">
+                                    </td>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ product.category.name }}</td>
+                                    <td>${{ product.price }}</td>
+                                    <td>{{ product.rating }}</td>
+                                    <td>{{ product.user.username|default:"N/A" }}</td>
+                                    <td>
+                                        <span class="status-badge listed">Listed</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="{% url 'product_detail' product.id %}" class="btn btn-sm btn-secondary">View</a>
+                                            <button class="btn btn-sm btn-warning unlist-product-btn" data-product-id="{{ product.id }}">Unlist</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                
+                                {% for product in unlisted_products %}
+                                <tr class="product-row" data-status="unlisted">
+                                    <td>{{ product.id }}</td>
+                                    <td>
+                                        <img src="{% static 'images/' %}{{ product.get_primary_image_name }}" alt="{{ product.name }}" class="product-thumbnail">
+                                    </td>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ product.category.name }}</td>
+                                    <td>${{ product.price }}</td>
+                                    <td>{{ product.rating }}</td>
+                                    <td>{{ product.user.username|default:"N/A" }}</td>
+                                    <td>
+                                        <span class="status-badge unlisted">Unlisted</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="{% url 'product_detail' product.id %}" class="btn btn-sm btn-secondary">View</a>
+                                            <button class="btn btn-sm btn-success list-product-btn" data-product-id="{{ product.id }}">List</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Moderation Tab -->
+            <div class="tab-pane fade" id="users" role="tabpanel">
+                <div class="admin-card">
+                    <h2>User Review Permissions</h2>
+                    
+                    <div class="filter-bar">
+                        <div class="search-field">
+                            <input type="text" id="user-search" placeholder="Search users...">
+                            <button class="search-btn"><i class="fa-solid fa-search"></i></button>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="user-status-filter">
+                                <option value="">All Users</option>
+                                <option value="banned">Review Banned</option>
+                                <option value="active">Active</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="admin-table users-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Reviews Posted</th>
+                                    <th>Review Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users_with_reviews %}
+                                <tr class="user-row" data-status="{% if user.is_review_banned %}banned{% else %}active{% endif %}">
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.reviews.count }}</td>
+                                    <td>
+                                        {% if user.is_review_banned %}
+                                            <span class="status-badge banned">Review Banned</span>
+                                        {% else %}
+                                            <span class="status-badge active">Can Review</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            {% if user.is_review_banned %}
+                                                <button class="btn btn-sm btn-success unban-reviews-btn" data-user-id="{{ user.id }}">Unban</button>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-danger ban-reviews-btn" data-user-id="{{ user.id }}">Ban User</button>
+                                            {% endif %}
+                                            <a href="#" class="btn btn-sm btn-secondary view-reviews-btn" data-username="{{ user.username }}">View Reviews</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Review Detail Modal -->
+<div id="review-detail-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Review Details</h3>
+        <div id="review-detail-content">
+            <!-- Review details will be loaded here dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmation-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Confirm Action</h3>
+        <div id="confirmation-content">
+            <p>Are you sure you want to perform this action?</p>
+        </div>
+        <div class="modal-actions">
+            <button id="confirm-action-btn" class="btn btn-danger">Confirm</button>
+            <button class="btn btn-secondary cancel-btn">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+<script>
+    // Set dashboard type for dashboard.js to use
+    window.dashboardType = 'moderator';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Moderator-specific customizations can go here
+        console.log('Moderator dashboard initialized');
+        
+        // Example: Handle view reviews button click for a specific user
+        const viewReviewsButtons = document.querySelectorAll('.view-reviews-btn');
+        if (viewReviewsButtons.length > 0) {
+            viewReviewsButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const username = this.dataset.username;
+                    
+                    // Filter the reviews table to only show reviews by this user
+                    const reviewRows = document.querySelectorAll('.reviews-table tbody tr');
+                    reviewRows.forEach(row => {
+                        const reviewUsername = row.querySelector('td:nth-child(2)').textContent.trim();
+                        row.style.display = (reviewUsername === username) ? '' : 'none';
+                    });
+                    
+                    // Switch to the reviews tab
+                    document.getElementById('reviews-tab').click();
+                    
+                    // Show a notification
+                    showNotification(`Showing reviews by ${username}`, 'success');
+                });
+            });
+        }
+        
+        // Reset view when changing filters
+        const reviewFilter = document.getElementById('review-filter');
+        if (reviewFilter) {
+            reviewFilter.addEventListener('change', function() {
+                // Reset any user-specific filtering
+                const reviewRows = document.querySelectorAll('.reviews-table tbody tr');
+                reviewRows.forEach(row => {
+                    row.style.display = '';
+                });
+                
+                // Then apply the selected filter
+                // This will be handled by the core filtering code in dashboard.js
+            });
+        }
+    });
+</script>
+{% endblock %}

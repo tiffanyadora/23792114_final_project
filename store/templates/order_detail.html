@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order #{{ order.id }} - WildcatWear{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/orders.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="order-container container">
+    <div class="order-header">
+        <div class="order-title">
+            <h2>Order #{{ order.id }}</h2>
+            <p>Order Status: <span class="status-badge {{ order.status }}">{{ order.get_status_display }}</span></p>
+            <p>Payment Status: <span class="status-badge {{ order.payment_info }}">{{ order.get_payment_info_display }}</span></p>
+        </div>
+        <div class="order-meta">
+            <p class="info-p">Placed on <strong>{{ order.created_at|date:"F j, Y H:i" }}</strong></p>
+            {% if order.estimated_delivery %}
+                <p class="info-p">Estimated delivery on <strong>{{ order.estimated_delivery|date:"F j, Y" }}</strong></p>
+            {% endif %}
+            <p class="info-p">Payment Method: <strong>{{ order.get_payment_method_display }}</strong></p>
+        </div>
+    </div>
+    
+    <div class="order-grid">
+        <div class="order-details">
+            <div class="order-card">
+                <h2>Order Items</h2>
+                <div class="order-items">
+                    {% for item in order.items.all %}
+                    <div class="order-item">
+                        <div class="item-image">
+                            {% if item.product %}
+                                <a href="{% url 'product_detail' item.product.id %}">
+                                    <img src="{% static 'images/' %}{{ item.product.get_primary_image_name }}" alt="{{ item.product_name }}">
+                                </a>
+                            {% else %}
+                                <div class="placeholder-image">
+                                    <i class="fa-solid fa-box"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="item-details">
+                            <h3>
+                                {% if item.product %}
+                                    <a href="{% url 'product_detail' item.product.id %}">{{ item.product_name }}</a>
+                                {% else %}
+                                    {{ item.product_name }}
+                                {% endif %}
+                            </h3>
+                            {% if item.size %}
+                                <p class="item-size">Size: {{ item.size }}</p>
+                            {% endif %}
+                            <p class="item-price">${{ item.price }} x {{ item.quantity }}</p>
+                        </div>
+                        <div class="item-subtotal">${{ item.subtotal }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="order-summary">
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span>${{ order.subtotal }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Shipping</span>
+                        <span>${{ order.shipping_cost }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Tax</span>
+                        <span>${{ order.tax }}</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total</span>
+                        <span>${{ order.total_amount }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            {% if order.status != 'cancelled' %}
+            <div class="order-card">
+                <h2>Order Timeline</h2>
+                <div class="order-timeline">
+                    <div class="timeline-item {% if order.status != 'pending' %}completed{% elif order.status == 'pending' %}active{% endif %}">
+                        <div class="timeline-icon">
+                            <i class="fa-solid fa-check-circle"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <h3>Order Placed</h3>
+                            <p>{{ order.created_at|date:"F j, Y" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if order.status == 'processing' %}active{% elif order.status not in 'pending,cancelled' %}completed{% endif %}">
+                        <div class="timeline-icon">
+                            <i class="fa-solid fa-box"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <h3>Processing</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if order.status == 'fulfilled' %}active completed{% endif %}">
+                        <div class="timeline-icon">
+                            <i class="fa-solid fa-check-double"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <h3>Estimated Delivery</h3>
+                            {% if order.estimated_delivery %}
+                                <p>{{ order.estimated_delivery|date:"F j, Y" }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="order-sidebar">
+            <div class="order-card">
+                <h2>Shipping Information</h2>
+                <div class="shipping-address">
+                    <p>Name: {{ order.full_name }}</p>
+                    <p>Address: {{ order.shipping_address|linebreaks }}</p>
+                </div>
+            </div>
+            
+            <div class="order-card">
+                <h2>Need Help?</h2>
+                <div class="order-help">
+                    <p>If you have any questions about your order, please contact our customer service team.</p>
+                    <a href="{% url 'new_message' %}" class="btn btn-primary btn-block">Contact Customer Service</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

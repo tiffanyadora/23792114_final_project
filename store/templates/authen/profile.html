@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - WildcatWear{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-container container">
+    <h1 class="section-title my-5 pb-2">My Profile</h1>
+    
+    <div class="profile-tabs">
+        <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab != 'notifications' %}active{% endif %}" id="account-tab" data-toggle="tab" href="#account" role="tab">Account Information</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'notifications' %}active{% endif %}" id="notifications-tab" data-toggle="tab" href="#notifications" role="tab">Notification Settings</a>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="profileTabsContent">
+            <!-- Account Information Tab -->
+            <div class="tab-pane fade {% if active_tab != 'notifications' %}show active{% endif %}" id="account" role="tabpanel">
+                <div class="profile-card">
+                    <h2>Account Information</h2>
+                    
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        Please correct the errors below.
+                    </div>
+                    {% endif %}
+                    
+                    <form id="profile-form" method="post" action="{% url 'profile' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="profile">
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                <div class="error-message">{{ form.username.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="role">Role</label>
+                                <input type="text" id="role" name="role" value="{{ user.get_role_display }}" disabled>
+                                <small class="text-muted">Role is assigned by administrators</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                <div class="error-message">{{ form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                <div class="error-message">{{ form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.email.id_for_label }}">Email Address</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <div class="error-message">{{ form.email.errors }}</div>
+                            {% endif %}
+                            {% if not user.email_verified %}
+                            <div class="warning-message">
+                                Your email is not verified. 
+                                <a href="{% url 'resend_verification_email' %}">Resend verification email</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.country.id_for_label }}">Country</label>
+                            {{ form.country }}
+                            {% if form.country.errors %}
+                            <div class="error-message">{{ form.country.errors }}</div>
+                            {% endif %}
+                        </div>
+                    
+                        <div class="form-group">
+                            <label for="{{ form.address.id_for_label }}">Shipping Address</label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                            <div class="error-message">{{ form.address.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.interest.id_for_label }}">Interests</label>
+                            {{ form.interest }}
+                            <small class="text-muted">Products or categories you're interested in</small>
+                            {% if form.interest.errors %}
+                            <div class="error-message">{{ form.interest.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Update Profile</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Notification Settings Tab -->
+            <div class="tab-pane fade {% if active_tab == 'notifications' %}show active{% endif %}" id="notifications" role="tabpanel">
+                <div class="profile-card">
+                    <h2>Notification Settings</h2>
+                    
+                    <form id="notification-form" method="post" action="{% url 'profile' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="notifications">
+                        
+                        <div class="form-group notification-toggle">
+                            <input type="checkbox" id="order_updates" name="order_updates" {% if notification_settings.order_updates %}checked{% endif %}>
+                            <label for="order_updates">Order Status Updates</label>
+                            <p class="notification-description">Receive notifications when your order status changes</p>
+                        </div>
+                        
+                        <div class="form-group notification-toggle">
+                            <input type="checkbox" id="product_restock" name="product_restock" {% if notification_settings.product_restock %}checked{% endif %}>
+                            <label for="product_restock">Product Restocks</label>
+                            <p class="notification-description">Receive notifications when products you've subscribed to are back in stock</p>
+                        </div>
+                        
+                        <div class="form-group notification-toggle">
+                            <input type="checkbox" id="price_alerts" name="price_alerts" {% if notification_settings.price_alerts %}checked{% endif %}>
+                            <label for="price_alerts">Price Alerts</label>
+                            <p class="notification-description">Receive notifications for price changes on products you're following</p>
+                        </div>
+                        
+                        <div class="form-group notification-toggle">
+                            <input type="checkbox" id="marketing_emails" name="marketing_emails" {% if notification_settings.marketing_emails %}checked{% endif %}>
+                            <label for="marketing_emails">Marketing Emails</label>
+                            <p class="notification-description">Receive emails about promotions, new products, and special offers</p>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save Preferences</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab navigation functionality
+    const tabLinks = document.querySelectorAll('.nav-link');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    tabLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Get target tab
+            const targetId = this.getAttribute('href').substring(1);
+            
+            // Remove active class from all tabs and panes
+            tabLinks.forEach(link => link.classList.remove('active'));
+            tabPanes.forEach(pane => pane.classList.remove('show', 'active'));
+            
+            // Add active class to clicked tab and corresponding pane
+            this.classList.add('active');
+            document.getElementById(targetId).classList.add('show', 'active');
+        });
+    });
+    
+    // Async Profile and Notification Form Save
+    const forms = document.querySelectorAll('form');  // Grab both profile and notification forms
+
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Changes saved.`, 'success'); 
+                    location.reload(); // Reload the page on success
+                } else {
+                    showNotification('Error: ' + data.error, 'error');
+                }
+            })
+        });
+    });
+
+    const profileForm = document.getElementById('profile-form');
+    const notificationForm = document.getElementById('notification-form');
+    
+    // Profile form submission handler
+    profileForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        showNotification('Your profile has been updated successfully!', 'success');   
+    });
+    
+    // Notification form submission handler
+    notificationForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        showNotification('Your notification settings have been updated successfully!', 'success');        
+    });
+
+    // Delete product confirmation
+    const deleteButtons = document.querySelectorAll('.delete-product-btn');
+    
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.getAttribute('data-product-id');
+            
+            if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+                window.location.href = `/products/${productId}/delete/`;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

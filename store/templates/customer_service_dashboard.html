@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Customer Service Dashboard - WildcatWear{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container container">
+    <h1 class="section-title my-5 pb-2">Customer Service Dashboard</h1>
+    
+    <div class="admin-tabs">
+        <ul class="nav nav-tabs" id="csTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="orders-tab" data-toggle="tab" href="#orders" role="tab">Order Management</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="products-tab" data-toggle="tab" href="#products" role="tab">Product Listing</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="sellers-tab" data-toggle="tab" href="#sellers" role="tab">Seller Assignment</a>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="csTabsContent">
+            <!-- Order Management Tab -->
+            <div class="tab-pane fade show active" id="orders" role="tabpanel">
+                <div class="admin-card">
+                    <h2>Order Management</h2>
+                    
+                    <div class="filter-bar">
+                        <div class="search-field">
+                            <input type="text" id="order-search" placeholder="Search orders...">
+                            <button class="search-btn"><i class="fa-solid fa-search"></i></button>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="order-filter">
+                                <option value="">All Orders</option>
+                                <option value="date">Sort by Date</option>
+                                <option value="item">Sort by Item</option>
+                                <option value="fulfilled">Fulfilled</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                        </div>  
+                    </div>
+                    
+                    <!-- Cancel/Refund Orders -->
+                    <div class="table-responsive">
+                        <table class="admin-table orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Total</th>
+                                    <th>Order Status</th>
+                                    <th>Payment Info</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>{{ order.id }}</td>
+                                    <td>{{ order.full_name }}</td>
+                                    <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                    <td>${{ order.total_amount }}</td>
+                                    <td>
+                                        <span class="status-badge {{ order.status }}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge {{ order.payment_info }}">
+                                            {{ order.get_payment_info_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-secondary view-order-btn" data-order-id="{{ order.id }}">View</button>
+                                            <button class="btn btn-sm btn-danger cancel-order-btn" data-order-id="{{ order.id }}">Cancel</button>
+                                            <button class="btn btn-sm btn-warning refund-order-btn" data-order-id="{{ order.id }}">Refund</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Product Listing Tab -->
+            <div class="tab-pane fade" id="products" role="tabpanel">
+                <div class="admin-card">
+                    <h2>Product Listing Management</h2>
+                    
+                    <div class="table-responsive">
+                        <table class="admin-table products-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Image</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Seller</th>
+                                    <th>Stock</th>
+                                    <th>Listed Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                <tr>
+                                    <td>{{ product.id }}</td>
+                                    <td>
+                                        <img src="{% static 'images/' %}{{ product.get_primary_image_name }}" alt="{{ product.name }}" class="product-thumbnail">
+                                    </td>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ product.category.name }}</td>
+                                    <td>{{ product.user.username|default:"N/A" }}</td>
+                                    <td>{{ product.quantity }}</td>
+                                    <td>
+                                        <span class="status-badge {% if product.is_listed %}listed{% else %}unlisted{% endif %}">
+                                            {% if product.is_listed %}Listed{% else %}Unlisted{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            {% if product.is_listed %}
+                                                <button class="btn btn-sm btn-warning unlist-product-btn" data-product-id="{{ product.id }}">Unlist</button>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-success list-product-btn" data-product-id="{{ product.id }}">List</button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seller Assignment Tab -->
+            <div class="tab-pane fade" id="sellers" role="tabpanel">
+                <div class="admin-card">
+                    <h2>Assign Seller Role</h2>
+                    
+                    <div class="filter-bar">
+                        <div class="search-field">
+                            <input type="text" id="seller-search" placeholder="Search users...">
+                            <button class="search-btn"><i class="fa-solid fa-search"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="admin-table sellers-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in potential_sellers %}
+                                <tr>
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-primary assign-seller-btn" data-user-id="{{ user.id }}">Assign as Seller</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Details Modal -->
+<div id="order-details-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Order Details</h3>
+        <div id="order-details-content">
+            <!-- Order details will be loaded here dynamically -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+<script>
+    // Set dashboard type for dashboard.js to use
+    window.dashboardType = 'customer_service';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Customer service-specific customizations can go here
+        console.log('Customer Service dashboard initialized');
+    });
+</script>
+{% endblock %}

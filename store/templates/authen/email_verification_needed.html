@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Email Verification Required - WildcatWear{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-form-container">
+        <h2 class="section-title my-10 pb-2">
+            Email Verification Required
+        </h2>
+        
+        <div class="alert alert-warning">
+            <p>Your email address needs to be verified before you can access all features.</p>
+            <p>We've sent a verification link to <strong>{{ request.user.email }}</strong>.</p>
+            <p>Please check your inbox and click the verification link to complete the process.</p>
+        </div>
+        
+        <div class="form-actions">
+            <a href="{% url 'resend_verification_email' %}" class="btn btn-primary">Resend Verification Email</a>
+            <a href="{% url 'home' %}" class="btn btn-secondary">Return to Homepage</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

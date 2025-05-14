@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Messages - WildcatWear{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/messages.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="messages-container container">
+    <h1 class="section-title my-5 pb-2">Messages</h1>
+    
+    <div class="messages-wrapper">
+        <div class="messages-sidebar">
+            <div class="sidebar-header">
+                <h2>Conversations</h2>
+                <div class="button-group">
+                    <a href="{% url 'new_message' %}" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-plus"></i> New Message
+                    </a>
+                </div>
+            </div>
+            
+            {% if conversations %}
+                <div class="conversation-list">
+                    {% for item in conversations %}
+                        <a href="{% url 'conversation' item.conversation.id %}" class="conversation-item {% if item.unread_count > 0 %}unread{% endif %}">
+                            <div class="conversation-avatar">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <div class="conversation-details">
+                                <div class="conversation-header">
+                                    <h3 class="conversation-name">{{ item.other_user.get_full_name|default:item.other_user.username }}</h3>
+                                    <span class="conversation-date">{{ item.conversation.updated_at|date:"M d" }}</span>
+                                </div>
+                                <div class="conversation-preview">
+                                    {% if item.last_message %}
+                                        <p>{{ item.last_message.content|truncatechars:50 }}</p>
+                                    {% else %}
+                                        <p class="empty-conversation">No messages yet</p>
+                                    {% endif %}
+                                    <span class="message-badge {% if unread_count > 0 %}show{% endif %}">
+                                        {{ unread_count }}
+                                    </span>                                      
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fa-solid fa-comments"></i>
+                    </div>
+                    <p>You don't have any conversations yet</p>
+                    <a href="{% url 'new_message' %}" class="btn btn-primary">Start a Conversation</a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="messages-content">
+            <div class="empty-conversation-placeholder">
+                <div class="empty-icon">
+                    <i class="fa-solid fa-comment-dots"></i>
+                </div>
+                <h2>Select a conversation</h2>
+                <p>Choose a conversation from the sidebar or start a new one</p>
+                <a href="{% url 'new_message' %}" class="btn btn-primary">New Message</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

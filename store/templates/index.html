@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+{% load static %}
+
+{% block title %}Homepage - WildcatWear{% endblock %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-content mx-auto my-x px-3 py-0">
+            <h1 class="mb-3">Show Your Wildcat Pride</h1>
+            <p class="mb-5">Official University of Arizona merchandise for students, alumni, and fans</p>
+            <a href="#featured-products" class="btn btn-primary">Shop Now</a>
+        </div>
+    </header>
+
+    <!-- Shop by Categories Section -->
+    <section id="category-section" class="featured-categories container">
+        <h2 class="section-title my-5 pb-2">Shop by Category</h2>
+        <div class="category-grid d-grid grid-cols-4 gap-4">
+            {% for category, image in categories.items %}
+            <a href="{% url 'home' %}?category={{ category }}#featured-products" class="category-card">
+                <img src="{% static 'images/' %}{{ image }}" alt="UA {{ category }}">
+                <h3 class="p-3 mb-0">{{ category }}</h3>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Featured Products Section-->
+     <section id="featured-products" class="featured-products container">
+        <h2 class="section-title my-5 pb-2">
+            {% if selected_category %}
+                Showing products in: <strong>{{ selected_category }}</strong>
+            {% else %}
+                Featured Products
+            {% endif %}
+        </h2>
+        
+        <div class="sorting-options mb-4 d-flex justify-between align-center">
+            <div class="sort-dropdown">
+                <select id="product-sort-home" class="form-control" onchange="location.href=this.value">
+                    <option value="?{% if selected_category %}category={{ selected_category }}&{% endif %}sort=recommended#featured-products" {% if sort_by == 'recommended' %}selected{% endif %}>
+                        Recommended
+                    </option>
+                    <option value="?{% if selected_category %}category={{ selected_category }}&{% endif %}sort=popular#featured-products" {% if sort_by == 'popular' %}selected{% endif %}>
+                        Most Popular
+                    </option>
+                    <option value="?{% if selected_category %}category={{ selected_category }}&{% endif %}sort=new#featured-products" {% if sort_by == 'new' %}selected{% endif %}>
+                        New Releases
+                    </option>
+                    <option value="?{% if selected_category %}category={{ selected_category }}&{% endif %}sort=rating#featured-products" {% if sort_by == 'rating' %}selected{% endif %}>
+                        Highest Rated
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <div class="product-flex d-flex flex-wrap gap-4 justify-center">
+            {% for product in products %}
+            <a href="{% url 'product_detail' product_id=product.id %}" class="product-card">
+                <div class="product-image">
+                    <img src="{% static 'images/' %}{{ product.get_primary_image_name }}" alt="{{ product.name }}">
+                </div>
+                <div class="product-info p-3">
+                    <h3 class="mb-1">{{ product.name }}</h3>
+                    <p class="product-price">${{ product.price }}</p>
+                    <div class="product-rating d-flex align-center mb-1">
+                        {% with ''|center:product.rating|slice:':5' as stars %}
+                        {% for _ in stars %}
+                        <i class="fa-solid fa-star"></i>
+                        {% endfor %}
+                        {% endwith %}
+    
+                        {% if product.rating|floatformat:1|slice:'-1:' >= '1' %}
+                        <i class="fa-solid fa-star-half-alt"></i>
+                        {% endif %}
+                        <span class="ml-1">{{ product.rating }}</span>
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <p>No products found in this category.</p>
+            {% endfor %}
+        </div>
+
+        {# Pagination #}
+        {% if products.has_other_pages %}
+        <nav class="pagination-container my-5">
+            <ul class="pagination d-flex justify-center gap-2">
+                {% if products.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}page={{ products.previous_page_number }}#featured-products">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+                {% endif %}
+
+                {% for i in products.paginator.page_range %}
+                    {% if products.number == i %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ i }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}page={{ i }}#featured-products">{{ i }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if products.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}page={{ products.next_page_number }}#featured-products">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </section>
+
+    <!-- Mixed Media Content Section -->
+    <section class="promo-section container">
+        <h2 class="section-title my-5 pb-2">Game Day Collection</h2>
+        <div class="promo-content d-flex gap-5">
+            <div class="promo-image-text d-flex flex-1 flex-column align-start justify-center gap-4">
+                <div class="small-image">
+                    <img class="full-width" src="{% static 'images/bear-down.png' %}" alt="Bear Down Wordmark">
+                </div>
+                <div class="box-text p-5">
+                    <h3 class="mb-3">Get Ready for <strong>Game Day</strong></h3>
+                    <p>Show your Wildcat pride with our new collection of game day essentials. From jerseys to face
+                        paint, we've got everything you need to support the team!</p>
+                    <a href="#category-section" class="btn btn-primary">Shop Collection</a>
+                </div>
+            </div>
+            <div class="large-image-container flex-2">
+                <div class="large-image">
+                    <img class="full-width" src="{% static 'images/gameday.jpg' %}" alt="UA Game Day Collection">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Four Box Section -->
+    <section class="info-boxes container d-grid grid-cols-4 gap-4">
+        <div class="info-box p-5">
+            <i class="fa-solid fa-truck-fast mb-3"></i>
+            <h3 class="mb-3">Free Shipping</h3>
+            <p class="m-0">On orders over $50</p>
+        </div>
+        <div class="info-box p-5">
+            <i class="fa-solid fa-medal mb-3"></i>
+            <h3 class="mb-3">Quality Guarantee</h3>
+            <p class="m-0">Official UA merchandise</p>
+        </div>
+        <div class="info-box p-5">
+            <i class="fa-solid fa-rotate-left mb-3"></i>
+            <h3 class="mb-3">Easy Returns</h3>
+            <p class="m-0">30-day return policy</p>
+        </div>
+        <div class="info-box p-5">
+            <i class="fa-solid fa-headset mb-3"></i>
+            <h3 class="mb-3">Support</h3>
+            <p class="m-0">24/7 customer service</p>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Product image gallery
+    const thumbnails = document.querySelectorAll('.thumbnail');
+    const mainImage = document.getElementById('main-product-image');
+    
+    thumbnails.forEach(thumbnail => {
+        thumbnail.addEventListener('click', () => {
+            const imgSrc = thumbnail.dataset.image;
+            mainImage.src = imgSrc;
+            thumbnails.forEach(t => t.classList.remove('active'));
+            thumbnail.classList.add('active');
+        });
+    });
+    
+    // Get product stock quantity
+    const stockStatusElement = document.querySelector('.stock-status');
+    let maxQuantity = 0;
+    
+    if (stockStatusElement) {
+        const stockTextMatch = stockStatusElement.textContent.match(/In Stock: (\d+) available/);
+        if (stockTextMatch && stockTextMatch[1]) {
+            maxQuantity = parseInt(stockTextMatch[1]);
+        }
+    }
+    
+    // Quantity controls
+    const quantityInput = document.getElementById('quantity');
+    const minusBtn = document.querySelector('.quantity-btn.minus');
+    const plusBtn = document.querySelector('.quantity-btn.plus');
+    const addToCartBtn = document.querySelector('.add-to-cart-btn');
+    
+    // Set max attribute on quantity input
+    if (quantityInput && maxQuantity > 0) {
+        quantityInput.setAttribute('max', maxQuantity);
+    }
+    
+    minusBtn.addEventListener('click', () => {
+        const currentValue = parseInt(quantityInput.value);
+        if (currentValue > 1) {
+            quantityInput.value = currentValue - 1;
+        }
+    });
+    
+    plusBtn.addEventListener('click', () => {
+        const currentValue = parseInt(quantityInput.value);
+        // Check if adding one more would exceed stock
+        if (maxQuantity > 0 && currentValue >= maxQuantity) {
+            // Show notification if trying to exceed stock
+            showNotification(`Only ${maxQuantity} items available in stock`, 'warning');
+            return;
+        }
+        quantityInput.value = currentValue + 1;
+    });
+    
+    // Validate direct input
+    if (quantityInput) {
+        quantityInput.addEventListener('change', () => {
+            let value = parseInt(quantityInput.value);
+            
+            if (isNaN(value) || value < 1) {
+                quantityInput.value = 1;
+            } else if (maxQuantity > 0 && value > maxQuantity) {
+                quantityInput.value = maxQuantity;
+                showNotification(`Maximum available quantity is ${maxQuantity}`, 'warning');
+            }
+        });
+    }
+    
+    // Add to cart form
+    const addToCartForm = document.querySelector('.add-to-cart-form');
+    addToCartForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const productId = document.querySelector('.add-to-cart-btn').dataset.productId;
+        const quantity = parseInt(quantityInput.value);
+        const sizeSelect = document.getElementById('size');
+        const size = sizeSelect ? sizeSelect.value : null;
+        
+        // Validate quantity against stock before submitting
+        if (maxQuantity > 0 && quantity > maxQuantity) {
+            showNotification(`Only ${maxQuantity} items available in stock`, 'error');
+            quantityInput.value = maxQuantity;
+            return;
+        }
+        
+        window.cartManager.addToCart(productId, quantity, size);
+    });
+    
+    // Product tabs
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.dataset.tab;
+            
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked button and corresponding content
+            button.classList.add('active');
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+        });
+    });
+    
+    // Setup Add to Cart buttons for suggested products
+    const addToCartButtons = document.querySelectorAll('.product-grid .btn-add-to-cart');
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const productId = button.dataset.productId;
+            window.cartManager.addToCart(productId, 1);
+        });
+    });
+});
+</script>
+{% endblock %}

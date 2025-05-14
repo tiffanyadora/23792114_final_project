@@ -1,0 +1,349 @@
+{% load custom_filters %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}WildcatWear - UA Merchandise Store{% endblock %}</title>
+
+    <!-- Website Icon -->
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+
+    <!-- Link to CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/utility-styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notification.css' %}">
+    {% block extra_css %}{% endblock %}
+
+    {% csrf_token %}
+    <script>
+        // Make the CSRF token available for all JavaScript
+        window.CSRF_TOKEN = "{{ csrf_token }}";
+        
+        // Helper function to get cookies (for CSRF token)
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+        
+        // Setup CSRF protection for all AJAX requests
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrftoken = getCookie('csrftoken') || window.CSRF_TOKEN;
+            
+            // Override fetch to automatically include CSRF token for same-origin requests
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options = {}) {
+                // Only add CSRF token to same-origin requests
+                if ((url.startsWith('/') || url.startsWith(window.location.origin)) && 
+                    (!options.method || ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method.toUpperCase()))) {
+                    
+                    if (!options.headers) {
+                        options.headers = {};
+                    } else if (options.headers instanceof Headers) {
+                        // Convert Headers object to plain object
+                        const plainHeaders = {};
+                        for (const [key, value] of options.headers.entries()) {
+                            plainHeaders[key] = value;
+                        }
+                        options.headers = plainHeaders;
+                    }
+                    
+                    // Add CSRF token
+                    options.headers['X-CSRFToken'] = csrftoken;
+                }
+                
+                return originalFetch(url, options);
+            };
+            
+            console.log('CSRF protection configured for AJAX requests');
+        });
+    </script>
+</head>
+
+<body data-username="{{ user.username }}" data-user-role="{{ user.role }}" data-is-review-banned="{{ user.is_review_banned|lower }}" data-review-id="{{ review.id }}" {% if user.is_authenticated %}class="logged-in"{% endif %} {% block body_attrs %}{% endblock %}>
+    <!-- Navbar with hamburger menu for mobile -->
+    <nav class="navbar d-flex justify-between flex-wrap align-center">
+        <input type="checkbox" id="navbar-toggle" class="navbar-toggle">
+        <label for="navbar-toggle" class="hamburger-menu">
+            <i class="fa-solid fa-bars"></i>
+        </label>
+
+        <a href="{% url 'home' %}" class="logo-container d-flex flex-1 justify-center">
+            <img src="{% static 'images/wildcat-logo.png' %}" alt="WildcatWear Logo" class="logo">
+        </a>
+        
+        <!-- Role-based -->
+        <div class="nav-bar-links d-flex flex-1 justify-start">
+            <a href="{% url 'home' %}" class="nav-bar-link mr-1 p-2">Home</a>
+            
+            {% if user.is_authenticated %}
+                <!-- Show dashboard link based on role -->
+                {% if user.role == 'admin' %}
+                    <a href="{% url 'admin_tools' %}" class="nav-bar-link mr-1 p-2">Admin Dashboard</a>
+                {% elif user.role == 'moderator' %}
+                    <a href="{% url 'moderator_dashboard' %}" class="nav-bar-link mr-1 p-2">Moderator Dashboard</a>
+                {% elif user.role == 'customer_service' %}
+                    <a href="{% url 'customer_service_dashboard' %}" class="nav-bar-link mr-1 p-2">CS Dashboard</a>
+                {% elif user.role == 'seller' %}
+                    <a href="{% url 'seller_dashboard' %}" class="nav-bar-link mr-1 p-2">Seller Dashboard</a>
+                {% endif %}
+
+                <a href="{% url 'user_orders' %}" class="nav-bar-link mr-1 p-2">My Orders</a>
+                <a href="{% url 'profile' %}" class="nav-bar-link mr-1 p-2">My Profile</a>
+                <a href="{% url 'logout' %}" class="nav-bar-link mr-1 p-2">Logout</a>
+            {% else %}
+                <a href="{% url 'register' %}" class="nav-bar-link mr-1 p-2">Register</a>
+                <a href="{% url 'login' %}" class="nav-bar-link mr-1 p-2">Login</a>
+            {% endif %}
+        </div>
+
+        <div class="nav-actions d-flex flex-1 align-center justify-end gap-4">
+            <!-- Desktop Search -->
+            <form action="{% url 'search' %}" method="GET" class="search-container d-flex align-center desktop-search">
+                <input type="text" name="query" class="search-input px-2" placeholder="Search products...">
+                <button type="submit" class="desktop-search-submit my-1 mr-2">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </form>
+
+            <!-- Mobile Search -->
+            <div class="mobile-search-container">
+                <input type="checkbox" id="search-toggle" class="search-toggle">
+                <label for="search-toggle" class="search-icon-btn">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </label>
+
+                <form action="{% url 'search' %}" method="GET" class="mobile-search-expanded">
+                    <input type="text" name="query" class="mobile-search-input px-2" placeholder="Search products...">
+                    <button type="submit" class="mobile-search-submit">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                    <label for="search-toggle" class="mobile-search-close">
+                        <i class="fa-solid fa-xmark"></i>
+                    </label>
+                </form>
+            </div>
+
+            <!-- Message Icon -->
+            <a href="{% url 'messages' %}" class="icon-link position-relative" id="message-icon">
+                <i class="fa-solid fa-comment-dots"></i>
+                {% if unread_count > 0 %}
+                <span id="message-badge" class="show">
+                    {% if unread_count > 99 %}99+{% else %}{{ unread_count }}{% endif %}
+                </span>
+                {% endif %}
+            </a>
+
+            <!-- Alert Icon-->
+            <a href="#" class="icon-link position-relative" id="alert-icon">
+                <i class="fa-solid fa-bell"></i>
+                <span id="notification-badge" class="{% if unread_notifications_count > 0 %}show{% endif %}">
+                    {% if unread_notifications_count > 99 %}99+{% else %}{{ unread_notifications_count }}{% endif %}
+                </span>
+            </a>
+
+            <!-- Notifications Dropdown -->
+            <div id="notifications-dropdown">
+                <div class="notifications-header">
+                    <h3>Notifications</h3>
+                    <div class="notifications-actions">
+                        <a href="#" id="mark-all-read">Mark all as read</a>
+                    </div>
+                </div>
+                <div class="notifications-list">
+                    <!-- Notifications will be loaded here dynamically -->
+                </div>
+                <div class="notifications-footer">
+                    <a href="{% url 'profile' %}">Notification Settings</a>
+                </div>
+            </div>
+
+            <!-- Cart Icon -->
+            <div class="icon-link position-relative d-flex align-center gap-1" id="cart-toggle">
+                <i class="fa-solid fa-shopping-cart"></i>
+                <span class="cart-count show" id="cart-count">0</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Product Submission Modal -->
+    <div id="product-submission-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Add New Product</h3>
+            <form class="modal-form" id="product-submission-form">
+                {% csrf_token %}
+                <label>
+                    Product Name:
+                    <input type="text" name="name" required>
+                </label>
+                
+                <label>
+                    Product Category:
+                    <select name="category" required>
+                        <option value="Apparel">Apparel</option>
+                        <option value="Accessories">Accessories</option>
+                        <option value="Gifts">Gifts</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </label>
+                
+                <label>
+                    Product Price:
+                    <input type="number" name="price" step="0.01" min="0" required>
+                </label>
+                
+                <label>
+                    Product Rating:
+                    <input type="number" name="rating" min="0" max="5" step="0.1" required>
+                </label>
+                
+                <label>
+                    Product Quantity:
+                    <input type="number" name="quantity" min="0" step="1" required>
+                </label>
+                
+                <label>
+                    Product Description:
+                    <textarea name="description" required></textarea>
+                </label>
+                
+                <label>
+                    Product Features (comma-separated):
+                    <input type="text" name="features" required>
+                </label>
+                
+                <label>
+                    Image Name:
+                    <input type="text" name="imageName" required placeholder="e.g., product1.jpg">
+                </label>
+
+                <label>
+                    Pokemon Mascot:
+                    <input type="text" name="pokemon" placeholder="e.g., pikachu">
+                </label>
+                
+                <label>
+                    Location:
+                    <input type="text" name="location" placeholder="e.g., Tucson, AZ">
+                </label>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cart Dropdown -->
+    <div id="cart-dropdown" class="cart-dropdown">
+        <h3>Your Cart</h3>
+        <ul class="cart-items">
+            <!-- Cart items will be added here dynamically -->
+        </ul>
+        <div class="cart-summary">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span class="cart-total-amount">$0.00</span>
+            </div>
+            <a href="#" class="btn btn-primary checkout-btn">Checkout</a>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkout-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-checkout-modal">&times;</span>
+            <h3>Checkout</h3>
+            <form class="modal-form" id="checkout-form">
+                <div class="form-group">
+                    <label for="full-name">Full Name</label>
+                    <input type="text" id="full-name" name="full_name" value="{{ user.get_full_name }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="text" id="email" name="email" value="{{ user.email }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="shipping-address">Shipping Address</label>
+                    <input type="text" id="shipping_address" name="shipping_address" value="{{ user.address }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="payment-method">Payment Method</label>
+                    <select id="payment-method" name="payment_method" class="form-control" required>
+                        <option value="">-- Select Payment Method --</option>
+                        <option value="credit_card">Credit Card</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="ewallet">E-Wallet</option>
+                        <option value="cod">Cash on Delivery</option>
+                    </select>
+                </div>                
+                
+                <div class="order-summary">
+                    <h3>Order Summary</h3>
+                    <ul id="order-items" class="order-items">
+                        <!-- Order items will be added here dynamically -->
+                    </ul>
+                    <div class="order-total">
+                        <span>Total:</span>
+                        <span id="order-total-amount">$0.00</span>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Complete Purchase</button>
+                    <button type="button" class="cancel-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    <!-- Footer -->
+    <footer class="footer pt-4">
+        <div class="footer-bottom mt-5 py-3 d-flex justify-between align-center flex-wrap gap-3">
+            <div class="footer-links d-flex gap-4">
+                <a href="#">Terms of Use</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Accessibility</a>
+            </div>
+            <p class="copyright mb-0">© WildcatWear 2025. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/notification.js' %}"></script>
+    <!-- Notification script -->
+    {% if request.session.notification %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var notificationData = document.getElementById('notification-data').textContent;
+            var notification = JSON.parse(notificationData);
+            showNotification(notification.message, notification.type);
+        });
+    </script>
+    <script id="notification-data" type="application/json">
+        {{ request.session.notification|json_script }}
+    </script>
+    {% endif %}
+    <script src="{% static 'js/search.js' %}"></script>
+    <script src="{% static 'js/product-api.js' %}"></script>
+    <script src="{% static 'js/product-navigation.js' %}"></script>
+    <script src="{% static 'js/api-service.js' %}"></script>
+    <script src="{% static 'js/cart-manager.js' %}"></script>
+    <script src="{% static 'js/admin-tools.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

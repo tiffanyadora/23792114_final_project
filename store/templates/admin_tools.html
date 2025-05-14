@@ -1,0 +1,512 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard - WildcatWear{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container container">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    
+    <h1 class="section-title my-5 pb-2">Admin Dashboard</h1>
+    
+    <div class="admin-tabs">
+        <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="users-tab" data-toggle="tab" href="#users" role="tab">User Management</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="products-tab" data-toggle="tab" href="#products" role="tab">Product Management</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="orders-tab" data-toggle="tab" href="#orders" role="tab">Order Management</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="reviews-tab" data-toggle="tab" href="#reviews" role="tab">Review Management</a>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="adminTabsContent">
+            <!-- User Management Tab -->
+            <div class="tab-pane fade show active" id="users" role="tabpanel">
+                <div class="admin-card">
+                    <h2>User Management</h2>
+                    
+                    <div class="filter-bar">
+                        <div class="search-field">
+                            <input type="text" id="user-search" placeholder="Search users...">
+                            <button class="search-btn"><i class="fa-solid fa-search"></i></button>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="role-filter">
+                                <option value="">All Roles</option>
+                                <option value="admin">Admin</option>
+                                <option value="moderator">Moderator</option>
+                                <option value="customer service">Customer Service</option>
+                                <option value="seller">Seller</option>
+                                <option value="customer">Customer</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="admin-table users-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>First Name</th>
+                                    <th>Last Name</th>
+                                    <th>Role</th>
+                                    <th>Created</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.first_name }}</td>
+                                    <td>{{ user.last_name }}</td>
+                                    <td>{{ user.get_role_display }}</td>
+                                    <td>{{ user.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <span class="status-badge {% if user.is_active %}active{% else %}inactive{% endif %}">
+                                            {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-primary edit-user-btn" data-user-id="{{ user.id }}">Edit Role</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div> 
+            </div>
+            
+            <!-- Product Management Tab -->
+            <div class="tab-pane fade" id="products" role="tabpanel">
+                <div class="admin-card">
+                    <h2>Product Management</h2>
+                    
+                    <div class="filter-bar">
+                        <div class="search-field">
+                            <input type="text" id="product-search" placeholder="Search products...">
+                            <button class="search-btn"><i class="fa-solid fa-search"></i></button>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="category-filter">
+                                <option value="">All Categories</option>
+                                {% for category in categories %}
+                                <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if user.is_authenticated and user.role in 'admin,seller' %}
+                            <button id="add-product-btn" class="btn btn-secondary">Add Product</button>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="admin-table products-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Image</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Seller</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                <tr>
+                                    <td>{{ product.id }}</td>
+                                    <td>
+                                        <img src="{% static 'images/' %}{{ product.get_primary_image_name }}" 
+                                             class="product-thumbnail" alt="{{ product.name }}">
+                                    </td>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ product.category.name }}</td>
+                                    <td>${{ product.price }}</td>
+                                    <td>
+                                        {{ product.quantity }}
+                                        <button class="btn btn-sm btn-secondary update-stock-btn" 
+                                                data-product-id="{{ product.id }}" 
+                                                data-current-stock="{{ product.quantity }}">
+                                            Update
+                                        </button>
+                                    </td>
+                                    <td>{{ product.user.username|default:"N/A" }}</td>
+                                    <td>
+                                        <span class="status-badge {% if product.is_listed %}listed{% else %}unlisted{% endif %}">
+                                            {% if product.is_listed %}Listed{% else %}Unlisted{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="{% url 'product_detail' product_id=product.id %}" class="btn btn-sm btn-secondary">View</a>
+                                            {% if user.is_authenticated and user.role in 'admin,seller' %}
+                                                <button class="edit-product-btn btn btn-sm btn-primary" data-product-id="{{ product.id }}">Edit Product</button>
+                                            {% endif %}
+                                            
+                                            {% if product.is_listed %}
+                                                <button class="btn btn-sm btn-warning unlist-product-btn" data-product-id="{{ product.id }}">Unlist</button>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-success list-product-btn" data-product-id="{{ product.id }}">List</button>
+                                            {% endif %}
+                                            
+                                            {% if user.is_authenticated and user.role in 'admin,seller' %}
+                                                <button id="delete-product-btn" class="btn btn-sm btn-danger">Delete</button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Order Management Tab -->
+            <div class="tab-pane fade" id="orders" role="tabpanel">
+                <div class="admin-card">
+                    <h2>Order Management</h2>
+                    
+                    <div class="filter-bar">
+                        <div class="search-field">
+                            <input type="text" id="order-search" placeholder="Search orders...">
+                            <button class="search-btn"><i class="fa-solid fa-search"></i></button>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="order-filter">
+                                <option value="">All Orders</option>
+                                <option value="date">Sort by Date</option>
+                                <option value="item">Sort by Item</option>
+                                <option value="fulfilled">Fulfilled</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                        </div>  
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="admin-table orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Products</th>
+                                    <th>Date</th>
+                                    <th>Total</th>
+                                    <th>Order Status</th>
+                                    <th>Payment Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>{{ order.id }}</td>
+                                    <td>{{ order.full_name }}</td>
+                                    <td>
+                                        {% for item in order.items.all %}
+                                            {{ item.product_name }} (x{{ item.quantity }})<br>
+                                        {% endfor %}
+                                    </td>
+                                    <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                    <td>${{ order.total_amount }}</td>
+                                    <td>
+                                        <span class="status-badge {{ order.status }}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge {{ order.payment_info }}">
+                                            {{ order.get_payment_info_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-secondary view-order-btn" data-order-id="{{ order.id }}">View</button>
+                                            {% if order.status == 'pending' %}
+                                                <button class="btn btn-sm btn-primary fulfill-order-btn" data-order-id="{{ order.id }}">Fulfill</button>
+                                            {% endif %}
+                                            {% if order.status in 'pending,processing' %}
+                                                <button class="btn btn-sm btn-danger cancel-order-btn" data-order-id="{{ order.id }}">Cancel</button>
+                                            {% endif %}
+                                            {% if order.payment_info in 'pending,paid,failed' %}
+                                                <button class="btn btn-sm btn-warning refund-order-btn" data-order-id="{{ order.id }}">Refund</button>
+                                            {% endif %}
+                                            <a href="{% url 'new_message' %}?recipient={{ order.user.id }}" class="btn btn-sm btn-info">Message Customer</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Review Management Tab -->
+            <div class="tab-pane fade" id="reviews" role="tabpanel">
+                <div class="admin-card">
+                    <h2>Review Management</h2>
+                    
+                    <div class="filter-bar">
+                        <div class="search-field">
+                            <input type="text" id="review-search" placeholder="Search reviews...">
+                            <button class="search-btn"><i class="fa-solid fa-search"></i></button>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="rating-filter">
+                                <option value="">All Ratings</option>
+                                <option value="5">5 Stars</option>
+                                <option value="4">4 Stars</option>
+                                <option value="3">3 Stars</option>
+                                <option value="2">2 Stars</option>
+                                <option value="1">1 Star</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="admin-table reviews-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Product</th>
+                                    <th>User</th>
+                                    <th>Rating</th>
+                                    <th>Comment</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for review in reviews %}
+                                <tr>
+                                    <td>{{ review.id }}</td>
+                                    <td>
+                                        <a href="{% url 'product_detail' review.product.id %}">{{ review.product.name }}</a>
+                                    </td>
+                                    <td>{{ review.username }}</td>
+                                    <td>
+                                        <div class="star-rating">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= review.rating %}
+                                                    <i class="fa-solid fa-star"></i>
+                                                {% else %}
+                                                    <i class="fa-regular fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td class="review-comment">{{ review.comment }}</td>
+                                    <td>{{ review.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-danger delete-review-btn" data-review-id="{{ review.id }}">Delete</button>
+                                            
+                                            {% if not review.user.is_review_banned %}
+                                                <button class="btn btn-sm btn-warning ban-reviews-btn" data-user-id="{{ review.user.id }}">Ban User</button>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-success unban-reviews-btn" data-user-id="{{ review.user.id }}">Unban User</button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Product Submission Modal -->
+<div id="product-submission-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Add New Product</h3>
+        <form class="modal-form" id="product-submission-form">
+            {% csrf_token %}
+            <label>
+                Product Name:
+                <input type="text" name="name" required>
+            </label>
+            
+            <label>
+                Product Category:
+                <select name="category" required>
+                    <option value="Apparel">Apparel</option>
+                    <option value="Accessories">Accessories</option>
+                    <option value="Gifts">Gifts</option>
+                    <option value="Others">Others</option>
+                </select>
+            </label>
+            
+            <label>
+                Product Price:
+                <input type="number" name="price" step="0.01" min="0" required>
+            </label>
+            
+            <label>
+                Product Rating:
+                <input type="number" name="rating" min="0" max="5" step="0.1" required>
+            </label>
+            
+            <label>
+                Product Quantity:
+                <input type="number" name="quantity" min="0" step="1" required>
+            </label>
+            
+            <label>
+                Product Description:
+                <textarea name="description" required></textarea>
+            </label>
+            
+            <label>
+                Product Features (comma-separated):
+                <input type="text" name="features" required>
+            </label>
+            
+            <label>
+                Image Name:
+                <input type="text" name="imageName" required placeholder="e.g., product1.jpg">
+            </label>
+
+            <label>
+                Pokemon Mascot:
+                <input type="text" name="pokemon" placeholder="e.g., pikachu">
+            </label>
+            
+            <label>
+                Location:
+                <input type="text" name="location" placeholder="e.g., Tucson, AZ">
+            </label>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="edit-user-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Edit User Role</h3>
+        <form class="modal-form" id="edit-user-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" id="user_id" name="user_id">
+            
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" disabled>
+            </div>
+            
+            <div class="form-group">
+                <label for="role">Role</label>
+                <select id="role" name="role" required>
+                    {% for value, label in role_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+    
+<!-- Order Details Modal -->
+<div id="order-details-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Order Details</h3>
+        <div id="order-details-content">
+            <!-- Order details will be loaded here dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- Update Stock Modal -->
+<div id="update-stock-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Update Stock</h3>
+        <form class="modal-form" id="update-stock-form">
+            <input type="hidden" id="stock-product-id">
+            <div class="form-group">
+                <label for="new-stock">New Stock Quantity:</label>
+                <input type="number" id="new-stock" min="0" required>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Update</button>
+                <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmation-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Confirm Action</h3>
+        <div id="confirmation-content">
+            <p>Are you sure you want to perform this action?</p>
+        </div>
+        <div class="modal-actions">
+            <button id="confirm-action-btn" class="btn btn-danger">Confirm</button>
+            <button class="btn btn-secondary cancel-btn">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+<script>
+    // Set dashboard type for dashboard.js to use
+    window.dashboardType = 'admin';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Admin-specific customizations can go here
+        console.log('Admin dashboard initialized');
+        
+        // Example of admin-specific functionality (if needed)
+        function initAdminSpecificFeatures() {
+            // Any admin-specific code that's not in the shared file
+        }
+        
+        // Initialize admin-specific features
+        initAdminSpecificFeatures();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Seller Dashboard - WildcatWear{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container container">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+    <h1 class="section-title my-5 pb-2">Seller Dashboard</h1>
+    
+    <div class="admin-tabs">
+        <ul class="nav nav-tabs" id="sellerTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="orders-tab" data-toggle="tab" href="#orders" role="tab">Order Management</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="products-tab" data-toggle="tab" href="#products" role="tab">My Products</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="messages-tab" data-toggle="tab" href="#messages" role="tab">Customer Messages</a>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="sellerTabsContent">
+            <!-- Order Management Tab -->
+            <div class="tab-pane fade show active" id="orders" role="tabpanel">
+                <div class="admin-card">
+                    <h2>Orders for My Products</h2>
+                    
+                    <div class="filter-bar">
+                        <div class="search-field">
+                            <input type="text" id="order-search" placeholder="Search orders...">
+                            <button class="search-btn"><i class="fa-solid fa-search"></i></button>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="order-filter">
+                                <option value="">All Orders</option>
+                                <option value="date">Sort by Date</option>
+                                <option value="item">Sort by Item</option>
+                                <option value="fulfilled">Fulfilled</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                        </div> 
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="admin-table orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Products</th>
+                                    <th>Date</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Payment Info</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>{{ order.id }}</td>
+                                    <td>{{ order.full_name }}</td>
+                                    <td>
+                                        {% for item in order.items.all %}
+                                            {% if item.product.user == user %}
+                                                {{ item.product_name }} (x{{ item.quantity }})<br>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                    <td>${{ order.total_amount }}</td>
+                                    <td>
+                                        <span class="status-badge {{ order.status }}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge {{ order.payment_info }}">
+                                            {{ order.get_payment_info_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-secondary view-order-btn" data-order-id="{{ order.id }}">View</button>
+                                            {% if order.status == 'pending' %}
+                                                <button class="btn btn-sm btn-primary fulfill-order-btn" data-order-id="{{ order.id }}">Fulfill</button>
+                                            {% endif %}
+                                            {% if order.status in 'pending' %}
+                                                <button class="btn btn-sm btn-danger cancel-order-btn" data-order-id="{{ order.id }}">Cancel</button>
+                                            {% endif %}
+                                            <a href="{% url 'new_message' %}?recipient={{ order.user.id }}" class="btn btn-sm btn-info">Message Customer</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Products Tab -->
+            <div class="tab-pane fade" id="products" role="tabpanel">
+                <div class="admin-card">
+                    <h2>My Products</h2>
+                    
+                    <div class="filter-bar">
+                        <div class="search-field">
+                            <input type="text" id="product-search" placeholder="Search products...">
+                            <button class="search-btn"><i class="fa-solid fa-search"></i></button>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="category-filter">
+                                <option value="">All Categories</option>
+                                {% for category in categories %}
+                                <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if user.is_authenticated and user.role in 'admin,seller' %}
+                            <button id="add-product-btn" class="btn btn-secondary">Add Product</button>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="admin-table products-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Image</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Listed Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                <tr>
+                                    <td>{{ product.id }}</td>
+                                    <td>
+                                        <img src="{% static 'images/' %}{{ product.get_primary_image_name }}" 
+                                             class="product-thumbnail" alt="{{ product.name }}">
+                                    </td>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ product.category.name }}</td>
+                                    <td>${{ product.price }}</td>
+                                    <td>
+                                        {{ product.quantity }}
+                                        <button class="btn btn-sm btn-secondary update-stock-btn" 
+                                                data-product-id="{{ product.id }}" 
+                                                data-current-stock="{{ product.quantity }}">
+                                            Update
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge {% if product.is_listed %}listed{% else %}unlisted{% endif %}">
+                                            {% if product.is_listed %}Listed{% else %}Unlisted{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="{% url 'product_detail' product_id=product.id %}" class="btn btn-sm btn-secondary">View</a>
+                                            {% if user.is_authenticated and user.role in 'admin,seller' %}
+                                                <button class="edit-product-btn btn btn-sm btn-primary" data-product-id="{{ product.id }}">Edit Product</button>
+                                            {% endif %}
+
+                                            {% if product.is_listed %}
+                                                <button class="btn btn-sm btn-warning unlist-product-btn" data-product-id="{{ product.id }}">Unlist</button>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-success list-product-btn" data-product-id="{{ product.id }}">List</button>
+                                            {% endif %}
+                                            
+                                            {% if user.is_authenticated and user.role in 'admin,seller' %}
+                                                <button id="delete-product-btn" class="btn btn-sm btn-danger">Delete</button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Messages Tab -->
+            <div class="tab-pane fade" id="messages" role="tabpanel">
+                <div class="admin-card">
+                    <h2>Customer Messages</h2>
+                    
+                    <div class="customers-list">
+                        <h3>Customers Who Bought My Products</h3>
+                        <div class="table-responsive">
+                            <table class="admin-table customers-table">
+                                <thead>
+                                    <tr>
+                                        <th>Customer</th>
+                                        <th>Email</th>
+                                        <th>Total Orders</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for customer in customers %}
+                                    <tr>
+                                        <td>{{ customer.get_full_name }}</td>
+                                        <td>{{ customer.email }}</td>
+                                        <td>
+                                            {% with customer.orders.count as order_count %}
+                                                {{ order_count }}
+                                            {% endwith %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'new_message' %}?recipient={{ customer.id }}" class="btn btn-sm btn-primary">Send Message</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Details Modal -->
+<div id="order-details-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Order Details</h3>
+        <div id="order-details-content">
+            <!-- Order details will be loaded here dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- Update Stock Modal -->
+<div id="update-stock-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Update Stock</h3>
+        <form class="modal-form" id="update-stock-form">
+            <input type="hidden" id="stock-product-id">
+            <div class="form-group">
+                <label for="new-stock">New Stock Quantity:</label>
+                <input type="number" id="new-stock" min="0" required>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Update</button>
+                <button type="button" class="btn btn-secondary cancel-btn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+<script>
+    // Set dashboard type and seller ID for dashboard.js to use
+    window.dashboardType = 'seller';
+    window.sellerId = "{{ user.id }}";
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Any seller-specific customizations can go here
+        console.log('Seller dashboard initialized for seller ID:', window.sellerId);
+    });
+</script>
+{% endblock %}

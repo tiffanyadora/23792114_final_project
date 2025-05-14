@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Orders - WildcatWear{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/orders.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="orders-container container">
+    <h1 class="section-title my-5 pb-2">My Orders</h1>
+    
+    <div class="orders-tabs">
+        <ul class="nav nav-tabs" id="ordersTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="current-tab" data-toggle="tab" href="#current" role="tab">Current Orders</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="past-tab" data-toggle="tab" href="#past" role="tab">Past Orders</a>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="ordersTabsContent">
+            <!-- Current Orders Tab -->
+            <div class="tab-pane fade show active" id="current" role="tabpanel">
+                {% if current_orders %}
+                    <div class="orders-list">
+                        {% for order in current_orders %}
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div class="order-info">
+                                    <h3>Order #{{ order.id }}</h3>
+                                    <p class="order-date">Placed on {{ order.created_at|date:"F j, Y" }}</p>
+                                </div>
+                                <div class="order-status">
+                                    <span class="status-badge {{ order.status }}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                    <span class="status-badge {{ order.payment_info }}">
+                                        {{ order.get_payment_info_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="order-body">
+                                <div class="order-items">
+                                    {% for item in order.items.all %}
+                                    <div class="order-item">
+                                        <div class="item-image">
+                                            {% if item.product %}
+                                                <img src="{% static 'images/' %}{{ item.product.get_primary_image_name }}" alt="{{ item.product_name }}">
+                                            {% else %}
+                                                <div class="placeholder-image">
+                                                    <i class="fa-solid fa-box"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="item-details">
+                                            <h4>{{ item.product_name }}</h4>
+                                            {% if item.size %}
+                                                <p class="item-size">Size: {{ item.size }}</p>
+                                            {% endif %}
+                                            <p class="item-quantity">Quantity: {{ item.quantity }}</p>
+                                            <p class="item-price">${{ item.price }} each</p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="order-summary">
+                                    <p class="order-total">Total: ${{ order.total_amount }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="order-actions">
+                                <a href="{% url 'order_detail' order_id=order.id %}" class="btn btn-primary">View Details</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fa-solid fa-box-open"></i>
+                        <h3>No Current Orders</h3>
+                        <p>You don't have any active orders right now.</p>
+                        <a href="{% url 'home' %}" class="btn btn-primary">Start Shopping</a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Past Orders Tab -->
+            <div class="tab-pane fade" id="past" role="tabpanel">
+                {% if past_orders %}
+                    <div class="orders-list">
+                        {% for order in past_orders %}
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div class="order-info">
+                                    <h3>Order #{{ order.id }}</h3>
+                                    <p class="order-date">Placed on {{ order.created_at|date:"F j, Y" }}</p>
+                                </div>
+                                <div class="order-status">
+                                    <span class="status-badge {{ order.status }}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                    <span class="status-badge {{ order.payment_info }}">
+                                        {{ order.get_payment_info_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="order-body">
+                                <div class="order-items">
+                                    {% for item in order.items.all %}
+                                    <div class="order-item">
+                                        <div class="item-image">
+                                            {% if item.product %}
+                                                <img src="{% static 'images/' %}{{ item.product.get_primary_image_name }}" alt="{{ item.product_name }}">
+                                            {% else %}
+                                                <div class="placeholder-image">
+                                                    <i class="fa-solid fa-box"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="item-details">
+                                            <h4>{{ item.product_name }}</h4>
+                                            {% if item.size %}
+                                                <p class="item-size">Size: {{ item.size }}</p>
+                                            {% endif %}
+                                            <p class="item-quantity">Quantity: {{ item.quantity }}</p>
+                                            <p class="item-price">${{ item.price }} each</p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="order-summary">
+                                    <p class="order-total">Total: ${{ order.total_amount }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="order-actions">
+                                <a href="{% url 'order_detail' order.id %}" class="btn btn-primary">View Details</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <h3>No Past Orders</h3>
+                        <p>Your order history will appear here once you've completed some orders.</p>
+                        <a href="{% url 'home' %}" class="btn btn-primary">Start Shopping</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab navigation
+    const tabLinks = document.querySelectorAll('.nav-link');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    tabLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            
+            tabLinks.forEach(link => link.classList.remove('active'));
+            tabPanes.forEach(pane => pane.classList.remove('show', 'active'));
+            
+            this.classList.add('active');
+            document.getElementById(targetId).classList.add('show', 'active');
+        });
+    });
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

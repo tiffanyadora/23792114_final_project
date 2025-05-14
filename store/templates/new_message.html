@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}New Message - WildcatWear{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/messages.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="messages-container container">
+    <h1 class="section-title my-5 pb-2">Messages</h1>
+    
+    <div class="messages-wrapper">
+        <div class="messages-sidebar">
+            <div class="sidebar-header">
+                <h2>Conversation</h2>
+                <div class="button-group">
+                    <a href="{% url 'messages' %}" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-comment-dots"></i> All Conversations
+                    </a>
+                    <a href="{% url 'new_message' %}" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-plus"></i> New Message
+                    </a>
+                </div>
+            </div>
+            
+            <div class="conversation-list">
+                {% for item in conversations %}
+                    <a href="{% url 'conversation' item.conversation.id %}" class="conversation-item {% if item.unread_count > 0 %}unread{% endif %}">
+                        <div class="conversation-avatar">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div class="conversation-details">
+                            <div class="conversation-header">
+                                <h3 class="conversation-name">{{ item.other_user.get_full_name|default:item.other_user.username }}</h3>
+                                <span class="conversation-date">{{ item.conversation.updated_at|date:"M d" }}</span>
+                            </div>
+                            <div class="conversation-preview">
+                                {% if item.last_message %}
+                                    <p>{{ item.last_message.content|truncatechars:50 }}</p>
+                                {% else %}
+                                    <p class="empty-conversation">No messages yet</p>
+                                {% endif %}
+                            </div>
+                            {% if item.unread_count > 0 %}
+                                <div class="unread-badge">{{ item.unread_count }}</div>
+                            {% endif %}
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="messages-content">
+            <div class="messages-header">
+                <div class="recipient-info">
+                    <div class="recipient-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <h2>New Message</h2>
+                </div>
+            </div>
+            
+            <div class="messages-body">
+                <form method="post" action="{% url 'new_message' %}" id="new-message-form">
+                    {% csrf_token %}
+                    <div class="form-group mb-3">
+                        <label for="recipient">To:</label>
+                        <select name="recipient" id="recipient" class="form-control" required>
+                            <option value="">Select a recipient</option>
+                            {% for user in recipients %}
+                                <option value="{{ user.id }}" {% if selected_recipient.id == user.id %}selected{% endif %}>
+                                    {{ user.get_full_name|default:user.username }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="message-input-container mt-4">
+                        <textarea name="content" id="message-input" placeholder="Type your message here..." required></textarea>
+                        <button type="submit" class="send-button">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto resize textarea
+    const messageInput = document.getElementById('message-input');
+    if (messageInput) {
+        function autoResize() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = messageInput.scrollHeight + 'px';
+        }
+        
+        messageInput.addEventListener('input', autoResize);
+        
+        // Focus on input
+        messageInput.focus();
+    }
+});
+</script>
+{% endblock %}

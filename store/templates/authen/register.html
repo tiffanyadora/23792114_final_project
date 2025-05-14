@@ -1,0 +1,511 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Register{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-form-container register-form">
+        <h2 class="section-title my-10 pb-2">
+            Create an Account
+        </h2>
+        
+        <form method="post" class="auth-form" id="registration-form">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}
+                    <div class="error-message">
+                        {% for error in form.first_name.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}
+                    <div class="error-message">
+                        {% for error in form.last_name.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">Username</label>
+                {{ form.username }}
+                <div id="username-feedback" class="feedback-message"></div>
+                {% if form.username.errors %}
+                <div class="error-message">
+                    {% for error in form.username.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">Email Address</label>
+                {{ form.email }}
+                <div id="email-feedback" class="feedback-message"></div>
+                {% if form.email.errors %}
+                <div class="email-error-message error-message">
+                    {% for error in form.email.errors %}
+                    <span>{{ error }}</span>
+                    {% if 'already exists' in error|lower %}
+                    <a href="{% url 'password_reset' %}" style="font-weight: bold;"> Forgot password?</a>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="country">Country</label>
+                <select id="country" name="country" required>
+                    <option value="">Select your country</option>
+                    {% for country_name in countries %}
+                    <option value="{{ country_name }}" {% if form.data.country == country_name or country_name == default_country %}selected{% endif %}>
+                        {{ country_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if form.errors.country %}
+                <div class="error-message">
+                    {{ form.errors.country.as_text }}
+                </div>
+                {% endif %}
+            </div>            
+            
+            <div class="form-group password-field">
+                <label for="{{ form.password1.id_for_label }}">Password</label>
+                <div class="password-input-container">
+                    {{ form.password1 }}
+                    <button type="button" class="password-toggle" data-target="password1">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <div class="password-strength">
+                    <div class="criteria">
+                        <span id="length-check" class="check-item">8+ characters</span>
+                        <span id="uppercase-check" class="check-item">Uppercase letter</span>
+                        <span id="lowercase-check" class="check-item">Lowercase letter</span>
+                        <span id="number-check" class="check-item">Number</span>
+                        <span id="special-check" class="check-item">Special character</span>
+                    </div>
+                </div>
+                {% if form.password1.errors %}
+                <div class="error-message">
+                    {% for error in form.password1.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group password-field">
+                <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+                <div class="password-input-container">
+                    {{ form.password2 }}
+                    <button type="button" class="password-toggle" data-target="password2">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <div id="password-match" class="feedback-message"></div>
+                {% if form.password2.errors %}
+                <div class="error-message">
+                    {% for error in form.password2.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="terms-checkbox">
+                {{ form.terms_accepted }}
+                <label for="{{ form.terms_accepted.id_for_label }}">
+                    I accept the <a href="{% url 'terms' %}" target="_blank">Terms and Conditions</a>
+                </label>
+                {% if form.terms_accepted.errors %}
+                <div class="error-message">
+                    {% for error in form.terms_accepted.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="register-btn">Create Account</button>
+            </div>
+        </form>
+        
+        <div class="auth-links">
+            <p>Already have an account? <a href="{% url 'login' %}">Log in</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/auth.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Get password inputs
+    const passwordInput = document.getElementById('id_password1');
+    const confirmPasswordInput = document.getElementById('id_password2');
+    const usernameInput = document.getElementById('id_username');
+
+    // Get all password toggle buttons
+    const passwordToggles = document.querySelectorAll('.password-toggle');
+
+    // Add event listeners to each toggle button
+    passwordToggles.forEach(function(toggle) {
+        toggle.addEventListener('click', function() {
+            // Get the target input field from data-target attribute
+            const targetId = this.getAttribute('data-target');
+            let targetInput;
+            
+            if (targetId === 'password1') {
+                targetInput = passwordInput;
+            } else if (targetId === 'password2') {
+                targetInput = confirmPasswordInput;
+            }
+            
+            if (targetInput) {
+                // Toggle the input type
+                const type = targetInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                targetInput.setAttribute('type', type);
+                
+                // Toggle the icon
+                const icon = this.querySelector('i');
+                if (type === 'text') {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            }
+        });
+    });
+
+    const registerBtn = document.getElementById('register-btn');
+    
+    // Password strength validation
+    let passwordValid = false;
+    
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        
+        // Check criteria
+        const lengthCheck = document.getElementById('length-check');
+        const uppercaseCheck = document.getElementById('uppercase-check');
+        const lowercaseCheck = document.getElementById('lowercase-check');
+        const numberCheck = document.getElementById('number-check');
+        const specialCheck = document.getElementById('special-check');
+        
+        // Length check
+        if (password.length >= 8) {
+            lengthCheck.classList.add('valid');
+        } else {
+            lengthCheck.classList.remove('valid');
+        }
+        
+        // Uppercase check
+        if (/[A-Z]/.test(password)) {
+            uppercaseCheck.classList.add('valid');
+        } else {
+            uppercaseCheck.classList.remove('valid');
+        }
+        
+        // Lowercase check
+        if (/[a-z]/.test(password)) {
+            lowercaseCheck.classList.add('valid');
+        } else {
+            lowercaseCheck.classList.remove('valid');
+        }
+        
+        // Number check
+        if (/\d/.test(password)) {
+            numberCheck.classList.add('valid');
+        } else {
+            numberCheck.classList.remove('valid');
+        }
+        
+        // Special character check
+        if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+            specialCheck.classList.add('valid');
+        } else {
+            specialCheck.classList.remove('valid');
+        }
+        
+        // Check if all criteria are met
+        passwordValid = (
+            password.length >= 8 &&
+            /[A-Z]/.test(password) &&
+            /[a-z]/.test(password) &&
+            /\d/.test(password) &&
+            /[!@#$%^&*(),.?":{}|<>]/.test(password)
+        );
+        
+        // Check password match
+        if (confirmPasswordInput.value) {
+            checkPasswordMatch();
+        }
+        
+        validateForm();
+    });
+
+    // Function to check password match
+    function checkPasswordMatch() {
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        const passwordMatchFeedback = document.getElementById('password-match');
+        
+        if (passwordMatchFeedback) {
+            if (password === confirmPassword) {
+                passwordMatchFeedback.textContent = 'Passwords match';
+                passwordMatchFeedback.className = 'feedback-message valid';
+                confirmPasswordInput.classList.add('is-valid');
+                confirmPasswordInput.classList.remove('is-invalid');
+            } else {
+                passwordMatchFeedback.textContent = 'Passwords do not match';
+                passwordMatchFeedback.className = 'feedback-message invalid';
+                confirmPasswordInput.classList.add('is-invalid');
+                confirmPasswordInput.classList.remove('is-valid');
+            }
+        }
+    }
+
+    // Setup confirm password validation
+    if (confirmPasswordInput) {
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+    }
+
+    // Function to validate the entire form
+    function validateForm() {
+        // Logic for form validation can be added here if needed
+    }
+
+    // Get the email input field
+    const emailField = document.getElementById('id_email');
+    const emailFeedback = document.getElementById('email-feedback');
+
+    // Add event listener for when user finishes typing (blur event)
+    emailField.addEventListener('blur', function() {
+        // Hide server-side error message if it exists
+        const serverErrorMessage = document.querySelector('.email-error-message');
+        if (serverErrorMessage) {
+            serverErrorMessage.style.display = 'none';
+        }
+        
+        // Only check if there's a value
+        if (this.value.trim() === '') {
+            emailFeedback.innerHTML = '';
+            emailFeedback.className = 'feedback-message';
+            return;
+        }
+        
+        // Basic format validation
+        if (!this.value.includes('@') || !this.value.includes('.')) {
+            emailFeedback.innerHTML = 'Please enter a valid email address';
+            emailFeedback.className = 'feedback-message invalid';
+            return;
+        }
+        
+        // Prepare form data for the AJAX request
+        const formData = new FormData();
+        formData.append('email', this.value);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        
+        // Show loading state
+        emailFeedback.innerHTML = 'Checking...';
+        emailFeedback.className = 'feedback-message';
+        
+        // Send the AJAX request
+        fetch('/check-email/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Add this line to debug the response
+            console.log('Email check response:', data);
+            
+            // Clear any existing content
+            emailFeedback.innerHTML = '';
+            
+            // Create the message element
+            const messageSpan = document.createElement('span');
+            messageSpan.textContent = data.message;
+            emailFeedback.appendChild(messageSpan);
+            
+            // If we have link data, create and append the link
+            if (data.html === true && data.link) {
+                // Create a space between message and link
+                emailFeedback.appendChild(document.createTextNode(' '));
+                
+                // Create the actual link
+                const linkElement = document.createElement('a');
+                linkElement.href = data.link.url;
+                linkElement.textContent = data.link.text;
+                linkElement.style.fontWeight = 'bold';
+                emailFeedback.appendChild(linkElement);
+            }
+            
+            // Set appropriate classes
+            if (data.available) {
+                emailFeedback.className = 'feedback-message valid';
+                emailField.classList.add('is-valid');
+                emailField.classList.remove('is-invalid');
+            } else {
+                emailFeedback.className = 'feedback-message invalid';
+                emailField.classList.add('is-invalid');
+                emailField.classList.remove('is-valid');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            emailFeedback.innerHTML = 'Error checking email availability. Please try again.';
+            emailFeedback.className = 'feedback-message invalid';
+        });
+    });
+
+    // Also check email when the form is submitted
+    const registrationForm = document.getElementById('registration-form');
+    if (registrationForm) {
+        registrationForm.addEventListener('submit', function(event) {
+            // Check if there's an invalid email message
+            const emailFeedback = document.getElementById('email-feedback');
+            const emailInput = document.getElementById('id_email');
+            
+            if (emailFeedback && emailFeedback.innerHTML.includes('already exists')) {
+                event.preventDefault();
+                // Make sure we show the feedback
+                emailFeedback.className = 'feedback-message invalid';
+                emailInput.classList.add('is-invalid');
+                emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }
+    
+    // Add real-time username validation with debouncing
+    if (usernameInput) {
+        const usernameFeedback = document.getElementById('username-feedback');
+        
+        // Create a debounce function to limit API calls during typing
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+        
+        // Define the check function
+        const checkUsername = function() {
+            const username = usernameInput.value.trim();
+            
+            // Skip if username is empty
+            if (!username) {
+                usernameFeedback.innerHTML = '';
+                usernameFeedback.className = 'feedback-message';
+                usernameInput.classList.remove('is-valid', 'is-invalid');
+                return;
+            }
+            
+            // Prepare form data for AJAX request
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            
+            // Show loading state
+            usernameFeedback.innerHTML = 'Checking...';
+            usernameFeedback.className = 'feedback-message';
+            
+            // Send the AJAX request
+            fetch('/check-username/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Update the message container
+                usernameFeedback.innerHTML = data.message;
+                
+                // Apply appropriate CSS class based on availability
+                if (data.available) {
+                    usernameFeedback.className = 'feedback-message valid';
+                    usernameInput.classList.add('is-valid');
+                    usernameInput.classList.remove('is-invalid');
+                } else {
+                    usernameFeedback.className = 'feedback-message invalid';
+                    usernameInput.classList.add('is-invalid');
+                    usernameInput.classList.remove('is-valid');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                usernameFeedback.innerHTML = 'Error checking username availability. Please try again.';
+                usernameFeedback.className = 'feedback-message invalid';
+            });
+        };
+        
+        // Create a debounced version of the check function
+        const debouncedCheck = debounce(checkUsername, 500); // 500ms delay
+        
+        // Add input event listener for real-time validation
+        usernameInput.addEventListener('input', debouncedCheck);
+        
+        // Keep blur event for immediate validation
+        usernameInput.addEventListener('blur', checkUsername);
+    }
+    
+    // Function to get CSRF token
+    function getCsrfToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+});
+</script>
+{% endblock %}
