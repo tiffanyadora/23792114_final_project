@@ -1,7 +1,7 @@
 # WildcatWear
 ### By: Tiffany Adora (23792114)
 
-**WildcatWear** is an e-commerce website for University of Arizona merchandise, built using **Django** as the backend stack, **HTML/CSS** as the frontend stack, as well as **Javascript**. Now fully-functioned, the platform supports user authentication, product management, shopping functionality, order processing, and many more. 
+**WildcatWear** is an e-commerce website for University of Arizona merchandise, built using **Django** as the backend stack, **HTML/CSS** as the frontend stack, as well as **Javascript**. Now fully-functioned, the platform supports user authentication, product management, shopping functionality, order processing, and many more! 
 
 Please follow the instructions below on how to spin up this project.
 
@@ -116,8 +116,7 @@ This is going to be used for transactional emails like verification and password
 To create your API key, please follow below steps:
 1. Sign up at https://www.mailjet.com/
 2. Get your API Key and Secret Key
-3. Add them to your `.env` file
-4. The system will automatically use these credentials for sending emails
+3. Add them to your `.env` file as `MAILJET_API_KEY` and `MAILJET_API_SECRET`
 
 ### ipapi.co
 
